@@ -479,7 +479,19 @@ function getAvatar(url) {
   return im.complete && !im._failed && im.naturalWidth > 0 ? im : null;
 }
 
+let lastDanger = null;
 function onState(s) {
+  // Tehlikedeki kurbağa hediye alıp kurtulduysa göster
+  if (s.phase === 'fight' && lastDanger && s.dangerId !== lastDanger) {
+    const prev = s.players.find(p => p.id === lastDanger);
+    const f = frogs.get(lastDanger);
+    if (prev && prev.alive && f && f.slot >= 0 && f.baseY) {
+      floaters.push({ x: f.x, y: f.baseY - f.r * 2.6, text: 'KURTULDU!', color: '#8ce99a', t0: performance.now(), size: 46 });
+      burst(f.x, f.baseY - f.r, 24, ['#8ce99a', '#fff', '#ffd43b'], 450);
+      addToast('gift', `${prev.name} hediyeyle kurtuldu!`, true);
+    }
+  }
+  lastDanger = s.phase === 'fight' ? s.dangerId : null;
   state = s; stateAt = performance.now();
   if (lastRound !== null && s.round !== lastRound) { frogs.clear(); winSeq = null; }
   lastRound = s.round;
@@ -526,7 +538,7 @@ function onGameEvent(ev) {
       sfx.ribbit();
       break;
     case 'queued':
-      addToast('rose', `${ev.name} sonraki tura katılacak`);
+      addToast('rose', ev.full ? `Tur dolu! ${ev.name} sonraki turda` : `${ev.name} sonraki tura katılacak`);
       break;
     case 'power': {
       const big = ev.add >= 1000;
@@ -583,7 +595,13 @@ function layoutFrogs(now) {
   const maxP = Math.max(1, ...alive.map(f => f.power));
   // en güçlü 25 kurbağa görünür; slotlar stabil kalır
   const ranked = alive.slice().sort((a, b) => b.power - a.power || a.order - b.order);
-  const visible = new Set(ranked.slice(0, pondSlots.length).map(f => f.id));
+  const dangerId = state && state.phase === 'fight' ? state.dangerId : null;
+  let shown = ranked.slice(0, pondSlots.length);
+  if (dangerId && !shown.find(f => f.id === dangerId)) {
+    const d = ranked.find(f => f.id === dangerId);
+    if (d) shown = shown.slice(0, pondSlots.length - 1).concat(d);
+  }
+  const visible = new Set(shown.map(f => f.id));
   for (const f of list) if (f.dead && now - f.dead.t0 < 1400) visible.add(f.id);
   const used = new Set();
   for (const f of list) {
@@ -627,7 +645,8 @@ function statusText(now) {
     if (state.timeLeft == null) return [`Oyuncu bekleniyor  ${alive}/${state.minPlayers}`, '#ffe066'];
     const left = Math.max(0, state.timeLeft - (now - stateAt));
     const s = Math.ceil(left / 1000), mm = String(Math.floor(s / 60)).padStart(2, '0'), ss = String(s % 60).padStart(2, '0');
-    return [`${mm}:${ss}   •   ${alive} kurbağa`, s <= 10 ? '#ff8787' : '#ffffff'];
+    const full = state.maxPlayers && alive >= state.maxPlayers;
+    return [`${mm}:${ss}   •   ${alive}/${state.maxPlayers || '∞'}${full ? ' DOLU' : ' kurbağa'}`, s <= 10 ? '#ff8787' : (full ? '#ffd43b' : '#ffffff')];
   }
   if (state.phase === 'fight') return [`SAVAŞ  •  ${alive} kurbağa kaldı`, '#ff8787'];
   if (state.phase === 'win') return ['Prenses öpücüğü verdi!', '#ffd43b'];
@@ -739,7 +758,19 @@ function drawBoard(ranked) {
 
 function drawToasts(now) {
   // sıradaki bildirimi göster (kuyruk uzunsa daha hızlı akar)
-  if (!toasts.length) return;
+  if (!toasts.length) {
+    if (state && state.phase === 'fight' && !banner) {
+      const msg = 'Hediye atmaya devam! Kurbağanı kurtar!';
+      const w = measure(msg, 34) + 110, y = L.toast.y, p = 1 + Math.sin(now / 160) * .03;
+      ctx.save(); ctx.translate(W / 2, y); ctx.scale(p, p);
+      rr(-w / 2, -36, w, 72, 36); ctx.fillStyle = 'rgba(150,20,35,.9)'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#ffc9c9'; ctx.stroke();
+      iconGift(-w / 2 + 44, 0, 34);
+      text(msg, 22, 1, 34, { color: '#fff' });
+      ctx.restore();
+    }
+    return;
+  }
   const t = toasts[0];
   if (t.t0 === null) t.t0 = now;
   const dur = toasts.length > 3 ? 900 : 1700;
@@ -799,6 +830,20 @@ function drawFrogs(now, t, info) {
     f.pulse = Math.max(0, f.pulse - .04);
     const pr = r * (1 + f.pulse * .18);
     const leader = f.id === leaderId && !f.dead;
+    const danger = fighting && state.dangerId === f.id && !f.dead;
+    if (danger) {
+      const pulse = .5 + Math.sin(t * 9) * .5;
+      ctx.save(); ctx.globalAlpha = (.45 + pulse * .4) * alpha;
+      const dg = ctx.createRadialGradient(x, y - pr * .6, pr * .3, x, y - pr * .6, pr * 2.1);
+      dg.addColorStop(0, 'rgba(255,60,60,.8)'); dg.addColorStop(1, 'rgba(255,60,60,0)');
+      ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(x, y - pr * .6, pr * 2.1, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      // sıradaki elemeye kalan süre halkası
+      const total = state.elimInterval || 1;
+      const left = Math.max(0, (state.elimLeft || 0) - (now - stateAt));
+      const k = clamp(left / Math.max(total, 3000), 0, 1);
+      ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.ellipse(f.x, f.baseY + 6, pr * 1.35, pr * .42, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); ctx.stroke(); ctx.restore();
+    }
     // gölge
     ctx.save(); ctx.globalAlpha = .25 * alpha; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(f.x, f.baseY + 6, pr * 1.1, pr * .28, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     if (leader) {
@@ -814,8 +859,14 @@ function drawFrogs(now, t, info) {
       const ny = y - pr * 1.75 - 26;
       const nw = Math.min(260, measure(f.name, 24) + 28);
       ctx.save(); ctx.globalAlpha = alpha;
-      rr(x - nw / 2, ny - 19, nw, 38, 19); ctx.fillStyle = leader ? 'rgba(120,70,0,.88)' : 'rgba(10,10,30,.72)'; ctx.fill();
-      if (leader) { ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffd43b'; ctx.stroke(); }
+      rr(x - nw / 2, ny - 19, nw, 38, 19); ctx.fillStyle = danger ? 'rgba(170,20,30,.92)' : leader ? 'rgba(120,70,0,.88)' : 'rgba(10,10,30,.72)'; ctx.fill();
+      if (leader || danger) { ctx.lineWidth = 2.5; ctx.strokeStyle = danger ? '#ffc9c9' : '#ffd43b'; ctx.stroke(); }
+      if (danger) {
+        const s2 = 1 + Math.sin(t * 9) * .06;
+        ctx.save(); ctx.translate(clamp(x, 105, W - 105), ny - 44); ctx.scale(s2, s2);
+        text('TEHLİKEDE!', 0, 0, 30, { color: '#ffe3e3', stroke: '#8a0010', strokeW: 8, weight: 900 });
+        ctx.restore();
+      }
       ctx.restore();
       ctx.save(); ctx.globalAlpha = alpha;
       text(f.name, x, ny + 1, 24, { maxW: nw - 20, weight: 800, color: leader ? '#fff3bf' : '#fff' });
@@ -1042,7 +1093,7 @@ function connectServer() {
 function startDemo() {
   mode = 'demo';
   const G = FrogGame;
-  const game = new G.Game({ roundSeconds: 32, minPlayers: 2, fightSeconds: 7, winSeconds: 13 });
+  const game = new G.Game({ roundSeconds: 32, minPlayers: 2, fightSeconds: 16, winSeconds: 13 });
   game.on(onGameEvent);
   const names = ['zeynep.k', 'mert_34', 'ayse.yildiz', 'kaan.tr', 'elif_nur', 'burak', 'selin06', 'emre.can', 'deniz_su', 'yusuf_61', 'irem.s', 'cankurbaga', 'melis', 'arda.07', 'ece_35', 'baris', 'nehir', 'kerem_01', 'asli.d', 'onur'];
   let n = 0, nextJoin = 0, nextGift = 0;

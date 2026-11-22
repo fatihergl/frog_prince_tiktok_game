@@ -1,5 +1,7 @@
 # 🐸👑 Kurbağa Prens — TikTok LIVE Oyunu
 
+[![CI](https://github.com/fatihergl/frog_prince_tiktok_game/actions/workflows/ci.yml/badge.svg)](https://github.com/fatihergl/frog_prince_tiktok_game/actions/workflows/ci.yml)
+
 İzleyiciler **gül** atarak kurbağa olur. **Beğeni** ve **hediyelerle** kurbağalarını güçlendirirler. Süre bitince kurbağalar savaşır, en güçlü kurbağa prensesi öper ve **prense dönüşür**. Kazananın adı ve profil fotoğrafı, üstünde bir **taçla** ekranda gösterilir.
 
 <p align="center">
@@ -42,11 +44,12 @@ Ses istemiyorsan adresin sonuna `?sound=0` ekle.
 1. TikTok'ta canlı yayını **aç**.
 2. Panelde kullanıcı adını yaz ve **Bağlan**'a bas. Başlıktaki ışık yeşil yanmalı.
 3. Gerisi otomatik ilerler:
-   - 🌹 **Gül** atan kişi kurbağa olarak oyuna girer.
+   - 🌹 **Gül** atan kişi kurbağa olarak oyuna girer. Bir turda **en fazla 50 kurbağa** olabilir. Tur doluyken gül atanlar otomatik olarak sonraki tura sıraya girer.
    - ❤️ Her **beğeni** = +1 güç (panelden değiştirilebilir).
    - 🎁 **Hediye** = elmas değeri × adet × 10 güç.
    - En az 2 oyuncu olunca süre başlar (varsayılan 3 dakika).
-   - Süre bitince **savaş** başlar. Her adımda en zayıf kurbağa elenir. Savaş sırasında gelen hediyeler bir kurbağayı son anda kurtarabilir.
+   - Süre bitince **savaş** başlar (varsayılan yaklaşık 20 saniye). Her adımda en zayıf kurbağa elenir.
+   - Savaşta **hediye atmaya devam edilir**. Sıradaki elenecek kurbağa kırmızı **"TEHLİKEDE!"** yazısıyla işaretlenir, altındaki halka kalan süreyi gösterir. Sahibi ya da arkadaşları hediye atarsa kurbağa **"KURTULDU!"** efektiyle hayatta kalır.
    - Son kalan kurbağa prensesi öper, prense dönüşür ve taçlı kazanan kartı gösterilir.
    - Ardından yeni tur başlar. Yeni turda herkesin tekrar gül atması gerekir.
 
@@ -55,7 +58,7 @@ Ses istemiyorsan adresin sonuna `?sound=0` ekle.
 | Bölüm | Ne işe yarar |
 |---|---|
 | **Tur kontrolü** | Savaşı hemen başlat, +30 saniye ekle, turu sıfırla |
-| **Oyun ayarları** | Süreler, beğeni gücü, hediye çarpanı, kazanan fotoğrafı aç/kapat |
+| **Oyun ayarları** | Süreler, tur başına en fazla oyuncu (varsayılan 50), beğeni gücü, hediye çarpanı, kazanan fotoğrafı aç/kapat |
 | **Oyuncular** | **Çıkar:** kişiyi bu turdan atar. **Engelle:** kara listeye ekler, bir daha hiç katılamaz |
 | **Kazanan** | **Fotoğrafını gizle:** uygunsuz bir profil fotoğrafını anında kaldırır (kısayol: `H`) |
 | **🛑 Mola Ekranı** | Ekranı anında "Kısa bir mola" perdesiyle kapatır (kısayol: `M`) |
@@ -82,7 +85,7 @@ Ses istemiyorsan adresin sonuna `?sound=0` ekle.
   "signApiKey": "",
   "nameSource": "uniqueId",
   "extraBadWords": ["istemedigin_kelime"],
-  "game": { "roundSeconds": 180, "minPlayers": 2, "likePower": 1, "giftMultiplier": 10, "fightSeconds": 10, "winSeconds": 15, "showWinnerAvatar": true }
+  "game": { "roundSeconds": 180, "minPlayers": 2, "maxPlayers": 50, "likePower": 1, "giftMultiplier": 10, "fightSeconds": 20, "winSeconds": 15, "showWinnerAvatar": true }
 }
 ```
 

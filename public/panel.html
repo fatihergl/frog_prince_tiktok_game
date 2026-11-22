@@ -114,6 +114,7 @@
       <h2>⚙ Oyun Ayarları</h2>
       <label class="f">Tur süresi (saniye) <input type="number" id="s_roundSeconds" min="10"></label>
       <label class="f">Savaş için en az oyuncu <input type="number" id="s_minPlayers" min="1"></label>
+      <label class="f">Tur başına en fazla oyuncu <input type="number" id="s_maxPlayers" min="2"></label>
       <label class="f">1 beğeni = kaç güç <input type="number" id="s_likePower" min="0"></label>
       <label class="f">Hediye çarpanı (elmas × ?) <input type="number" id="s_giftMultiplier" min="1"></label>
       <label class="f">Savaş süresi (saniye) <input type="number" id="s_fightSeconds" min="3"></label>
@@ -233,7 +234,7 @@ $('curtainBtn').onclick = () => post('/api/curtain', { on: !(S && S.curtain) });
 $('hideAvatarBtn').onclick = () => post('/api/winner/hide-avatar', { hidden: true }).then(r => r && toast('Fotoğraf gizlendi'));
 
 /* ---- Ayarlar ---- */
-const SKEYS = ['roundSeconds', 'minPlayers', 'likePower', 'giftMultiplier', 'fightSeconds', 'winSeconds'];
+const SKEYS = ['roundSeconds', 'minPlayers', 'maxPlayers', 'likePower', 'giftMultiplier', 'fightSeconds', 'winSeconds'];
 function fillSettings(st) {
   for (const k of SKEYS) $('s_' + k).value = st[k];
   $('s_showWinnerAvatar').checked = !!st.showWinnerAvatar;
@@ -296,13 +297,14 @@ function render() {
     const left = Math.max(0, S.timeLeft - (performance.now() - stateAt));
     const s = Math.ceil(left / 1000);
     $('timer').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
-    $('timerNote').textContent = `${alive.length} kurbağa yarışıyor`;
+    const full = alive.length >= S.maxPlayers;
+    $('timerNote').textContent = `${alive.length}/${S.maxPlayers} kurbağa yarışıyor` + (full ? ' — TUR DOLU' : '') + (S.queued ? ` · Sırada: ${S.queued}` : '');
   } else if (S.phase === 'lobby') {
     $('timer').textContent = '--:--';
     $('timerNote').textContent = `Oyuncu bekleniyor (${alive.length}/${S.minPlayers}). Süre, yeterli oyuncu gelince başlar.`;
   } else if (S.phase === 'fight') {
     $('timer').textContent = '⚔';
-    $('timerNote').textContent = `${alive.length} kurbağa kaldı`;
+    $('timerNote').textContent = `${alive.length} kurbağa kaldı · Hediyeler savaşta da geçerli` + (S.queued ? ` · Sırada: ${S.queued}` : '');
   } else {
     $('timer').textContent = '👑';
     $('timerNote').textContent = 'Kazanan ekranı gösteriliyor, sonra yeni tur başlar.' + (S.queued ? ` Sırada bekleyen: ${S.queued}` : '');

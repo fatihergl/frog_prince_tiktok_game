@@ -9,9 +9,10 @@
   "game": {
     "roundSeconds": 180,
     "minPlayers": 2,
+    "maxPlayers": 50,
     "likePower": 1,
     "giftMultiplier": 10,
-    "fightSeconds": 10,
+    "fightSeconds": 20,
     "winSeconds": 15,
     "showWinnerAvatar": true
   }

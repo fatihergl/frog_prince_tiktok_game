@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 1.1.0 — 2026-11-22
+- Tur başına en fazla 50 oyuncu (panelden değiştirilebilir); fazlası otomatik olarak sonraki tura sıraya girer
+- Savaş varsayılan olarak yaklaşık 20 saniye sürer; az oyuncuda elemeler arası uzar
+- Savaşta hediye atmaya devam: sıradaki elenecek kurbağa "TEHLİKEDE!" olarak işaretlenir, geri sayım halkası gösterilir, hediyeyle kurtulan kurbağa için "KURTULDU!" efekti
+- Tehlikedeki kurbağa gölde gizli kalsa bile ekrana getirilir
+
 ## 1.0.0 — 2026-11-22
 - İlk sürüm: gül ile katılım, beğeni/hediye ile güç, savaş, prenses öpücüğü, prense dönüşüm, taçlı kazanan kartı
 - Kontrol paneli: bağlantı, tur kontrolü, ayarlar, oyuncu çıkarma/engelleme, mola ekranı, canlı önizleme

@@ -84,3 +84,31 @@ test('kick ve test oyuncularını temizleme', () => {
   assert.ok(g.kick('a'));
   assert.equal(g.players.size, 0);
 });
+
+test('tur başına 50 oyuncu sınırı: fazlası sonraki tura sıraya girer', () => {
+  const g = new Game({ minPlayers: 2, winSeconds: 1 });
+  for (let i = 0; i < 55; i++) g.handleGift({ id: 'p' + i, name: 'oyuncu' + i }, ROSE, 0);
+  assert.equal(g.players.size, 50);
+  assert.equal(g.queue.length, 5);
+  // sıradakilerin hediyesi bu turda güç vermez
+  assert.equal(g.handleGift({ id: 'p52' }, { giftId: 1, giftName: 'Lion', diamonds: 100 }, 0).ok, false);
+  assert.ok(!g.players.has('p52'));
+  g.startFight(0);
+  let t = 0;
+  for (let i = 0; i < 200 && g.phase !== 'lobby'; i++) { t += 1000; g.tick(t); }
+  assert.equal(g.phase, 'lobby');
+  assert.equal(g.players.size, 5); // sıradakiler yeni tura otomatik girdi
+});
+
+test('savaş varsayılan olarak yaklaşık 20 saniye sürer ve hediyeyle kurtulunabilir', () => {
+  const g = new Game({ minPlayers: 2 });
+  for (let i = 0; i < 11; i++) g.handleGift({ id: 'p' + i, name: 'o' + i }, ROSE, 0);
+  g.startFight(0);
+  assert.equal(g.elimInterval, 2000);
+  const danger = g.snapshot(0).dangerId;
+  assert.ok(danger);
+  g.handleGift({ id: danger }, { giftId: 1, giftName: 'Perfume', diamonds: 20 }, 100);
+  assert.notEqual(g.snapshot(100).dangerId, danger);
+  g.tick(3000);
+  assert.ok(g.players.get(danger).alive, 'hediye atılan kurbağa kurtulmalı');
+});

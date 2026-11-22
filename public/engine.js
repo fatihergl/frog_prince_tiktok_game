@@ -15,9 +15,10 @@
   const DEFAULT_SETTINGS = {
     roundSeconds: 180,       // Tur süresi (oyuncu sayısı minPlayers'a ulaşınca başlar)
     minPlayers: 2,           // Savaşın başlaması için en az oyuncu
+    maxPlayers: 50,          // Tur başına en fazla oyuncu (dolunca gül atanlar sonraki tura sıraya girer)
     likePower: 1,            // Her beğeni = +1 güç
     giftMultiplier: 10,      // Hediye gücü = elmas değeri × adet × çarpan
-    fightSeconds: 10,        // Savaş sahnesinin yaklaşık süresi
+    fightSeconds: 20,        // Savaşın yaklaşık süresi (savaşta hediye atmaya devam edilir)
     winSeconds: 15,          // Kazanan sahnesinin süresi
     showWinnerAvatar: true,  // Finalde kazananın profil fotoğrafı gösterilsin mi
     joinGiftIds: [5655],     // Katılım hediyesi ID'leri (5655 = Gül / Rose)
@@ -111,9 +112,10 @@
       this.winEndsAt = null;
       this.fightStartedAt = null;
       const queued = this.queue || [];
-      this.queue = [];
+      const cap = this.settings.maxPlayers || Infinity;
+      this.queue = queued.slice(cap);
       if (!silent) this.emit({ type: 'phase', phase: 'lobby', round: this.round });
-      for (const u of queued) this._addPlayer(u, now, 0);
+      for (const u of queued.slice(0, cap)) this._addPlayer(u, now, 0);
     }
 
     _addPlayer(user, now, bonusPower) {
@@ -156,11 +158,12 @@
 
       if (!p) {
         if (!isJoinGift(gift, this.settings)) return { ok: false, reason: 'not-joined' };
-        if (this.phase !== 'lobby') {
-          // Savaş/final sırasında gelen gül: bir sonraki tura sıraya alınır
+        const full = this.players.size >= (this.settings.maxPlayers || Infinity);
+        if (this.phase !== 'lobby' || full) {
+          // Savaş/final sırasında ya da tur doluyken gelen gül: bir sonraki tura sıraya alınır
           if (!this.queue.find(q => String(q.id) === id)) this.queue.push(Object.assign({}, user));
-          this.emit({ type: 'queued', id, name: cleanDisplayName(user.name, '?', this.settings, this.extraBadWords) });
-          return { ok: true, queued: true };
+          this.emit({ type: 'queued', id, full, name: cleanDisplayName(user.name, '?', this.settings, this.extraBadWords) });
+          return { ok: true, queued: true, full };
         }
         p = this._addPlayer(user, now, power - this.settings.giftMultiplier);
         return { ok: true, joined: true };
@@ -204,8 +207,9 @@
       if (n === 0) return false;
       this.phase = 'fight';
       this.fightStartedAt = now;
-      this.elimInterval = n > 1 ? Math.max(250, Math.min(1500, (this.settings.fightSeconds * 1000) / (n - 1))) : 0;
-      this.nextElimAt = now + 2200; // "SAVAŞ!" yazısı için kısa bekleme
+      // Savaş toplamda yaklaşık fightSeconds sürer; az oyuncuda elemeler arası uzar, böylece hediyeyle kurtarma şansı olur
+      this.elimInterval = n > 1 ? Math.max(400, Math.min(6000, (this.settings.fightSeconds * 1000) / (n - 1))) : 0;
+      this.nextElimAt = now + 3000; // "SAVAŞ!" yazısı için kısa bekleme
       this.emit({ type: 'phase', phase: 'fight', round: this.round });
       return true;
     }
@@ -273,10 +277,20 @@
         if (winner.hidden || !this.settings.showWinnerAvatar) winner.avatar = null;
         delete winner.hidden;
       }
+      let dangerId = null, elimLeft = null;
+      if (this.phase === 'fight') {
+        const ranked = this._ranked();
+        if (ranked.length > 1) dangerId = ranked[ranked.length - 1].id;
+        elimLeft = Math.max(0, this.nextElimAt - now);
+      }
       return {
         phase: this.phase,
         round: this.round,
         now,
+        dangerId,
+        elimLeft,
+        elimInterval: this.elimInterval,
+        maxPlayers: this.settings.maxPlayers,
         timeLeft: this.roundEndsAt ? Math.max(0, this.roundEndsAt - now) : null,
         winLeft: this.winEndsAt ? Math.max(0, this.winEndsAt - now) : null,
         minPlayers: this.settings.minPlayers,
@@ -287,7 +301,7 @@
         curtain: this.curtain,
         settings: {
           roundSeconds: this.settings.roundSeconds, likePower: this.settings.likePower,
-          giftMultiplier: this.settings.giftMultiplier, minPlayers: this.settings.minPlayers,
+          giftMultiplier: this.settings.giftMultiplier, minPlayers: this.settings.minPlayers, maxPlayers: this.settings.maxPlayers,
           fightSeconds: this.settings.fightSeconds, winSeconds: this.settings.winSeconds,
           showWinnerAvatar: this.settings.showWinnerAvatar
         }
@@ -295,7 +309,7 @@
     }
 
     updateSettings(patch) {
-      const allowed = ['roundSeconds', 'minPlayers', 'likePower', 'giftMultiplier', 'fightSeconds', 'winSeconds', 'showWinnerAvatar'];
+      const allowed = ['roundSeconds', 'minPlayers', 'maxPlayers', 'likePower', 'giftMultiplier', 'fightSeconds', 'winSeconds', 'showWinnerAvatar'];
       for (const k of allowed) {
         if (patch[k] === undefined) continue;
         if (k === 'showWinnerAvatar') this.settings[k] = !!patch[k];
@@ -306,6 +320,8 @@
       }
       this.settings.minPlayers = Math.max(1, Math.round(this.settings.minPlayers));
       this.settings.roundSeconds = Math.max(10, this.settings.roundSeconds);
+      this.settings.maxPlayers = Math.max(this.settings.minPlayers, Math.round(this.settings.maxPlayers) || 50);
+      this.settings.fightSeconds = Math.max(3, this.settings.fightSeconds);
     }
   }
 
