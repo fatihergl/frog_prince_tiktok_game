@@ -46,7 +46,8 @@ Ses istemiyorsan adresin sonuna `?sound=0` ekle.
 3. Gerisi otomatik ilerler:
    - 🌹 **Gül** atan kişi kurbağa olarak oyuna girer. Bir turda **en fazla 50 kurbağa** olabilir. Tur doluyken gül atanlar otomatik olarak sonraki tura sıraya girer.
    - ❤️ Her **beğeni** = +1 güç (panelden değiştirilebilir).
-   - 🎁 **Hediye** = elmas değeri × adet × 10 güç.
+   - 🎁 **Hediye:** **1 jeton = 10 güç**. Hediyenin jeton değeri × adet × 10. Örneğin 20 jetonluk Perfume +200 güç verir. Ekrandaki kural satırında ve her hediye bildiriminde bu hesap gösterilir ("Perfume = 20 jeton → +200 güç").
+   - Kulenin üstündeki küçük **"Sonraki oyun"** sayacı yeni tura kalan süreyi gösterir. Bekleme ve savaş sırasında yaklaşık süreyi (~), kazanan ekranında ise kesin süreyi gösterir.
    - En az 2 oyuncu olunca süre başlar (varsayılan 3 dakika).
    - Süre bitince **savaş** başlar (varsayılan yaklaşık 20 saniye). Her adımda en zayıf kurbağa elenir.
    - Savaşta **hediye atmaya devam edilir**. Sıradaki elenecek kurbağa kırmızı **"TEHLİKEDE!"** yazısıyla işaretlenir, altındaki halka kalan süreyi gösterir. Sahibi ya da arkadaşları hediye atarsa kurbağa **"KURTULDU!"** efektiyle hayatta kalır.

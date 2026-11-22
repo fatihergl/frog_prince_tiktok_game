@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## 1.2.0 — 2026-11-22
+- Ekranda güç kuralı: "1 Jeton = 10 Güç" (çarpan ayarından otomatik)
+- Hediye bildirimlerinde jeton hesabı: "Perfume = 20 jeton → +200 güç"
+- Kulenin üstünde küçük "Sonraki oyun" geri sayımı
+- Göl ve bildirim yerleşimi düzenlendi (savaş uyarısı isimleri kapatmıyor)
+
 ## 1.1.0 — 2026-11-22
 - Tur başına en fazla 50 oyuncu (panelden değiştirilebilir); fazlası otomatik olarak sonraki tura sıraya girer
 - Savaş varsayılan olarak yaklaşık 20 saniye sürer; az oyuncuda elemeler arası uzar

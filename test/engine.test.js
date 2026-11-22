@@ -112,3 +112,20 @@ test('savaş varsayılan olarak yaklaşık 20 saniye sürer ve hediyeyle kurtulu
   g.tick(3000);
   assert.ok(g.players.get(danger).alive, 'hediye atılan kurbağa kurtulmalı');
 });
+
+test('sonraki oyuna kalan süre her aşamada hesaplanır', () => {
+  const g = new Game({ minPlayers: 2, roundSeconds: 60, fightSeconds: 20, winSeconds: 15 });
+  assert.equal(g.snapshot(0).nextGameIn, null);
+  for (let i = 0; i < 3; i++) g.handleGift({ id: 'p' + i, name: 'o' + i }, ROSE, 0);
+  const lobby = g.snapshot(0).nextGameIn;
+  assert.ok(lobby > 60000 + 15000);
+  g.startFight(0);
+  const fight = g.snapshot(0).nextGameIn;
+  assert.ok(fight > 15000 && fight < lobby);
+  let t = 0;
+  while (g.phase === 'fight') { t += 100; g.tick(t); }
+  const win = g.snapshot(t).nextGameIn;
+  assert.ok(win <= 15000 && win > 14000);
+  // tahmin gerçek süreye yakın olmalı
+  assert.ok(Math.abs((t + 15000) - fight) < 500, `tahmin ${fight}, gerçek ${t + 15000}`);
+});

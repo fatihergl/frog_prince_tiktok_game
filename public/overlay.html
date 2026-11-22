@@ -43,8 +43,8 @@ const L = {
   balcony: { x: 575, y: 860, w: 470 },
   princess: { x: 905, y: 852 },
   prince: { x: 735, y: 852 },
-  toast: { y: 940 },
-  pond: { x: 50, y: 1060, w: 980, h: 600 }
+  toast: { y: 918 },
+  pond: { x: 50, y: 1100, w: 980, h: 580 }
 };
 
 /* ---------------- Yardımcılar ---------------- */
@@ -547,7 +547,7 @@ function onGameEvent(ev) {
         f.pulse = 1;
         if (big) burst(f.x, f.baseY - f.r, 30, ['#ffd43b', '#fff3bf', '#ff922b'], 520);
       }
-      if (ev.add >= 50 || big) addToast('gift', `${ev.name} → ${ev.gift}${ev.count > 1 ? ' ×' + ev.count : ''}  +${fmt(ev.add)} güç`, big);
+      if (ev.add >= 50 || big) addToast('gift', `${ev.name}: ${ev.gift}${ev.count > 1 ? ' ×' + ev.count : ''} = ${fmt(ev.coins || 0)} jeton → +${fmt(ev.add)} güç`, big);
       big ? sfx.big() : sfx.gift();
       break;
     }
@@ -686,7 +686,7 @@ function drawRules() {
   const items = [
     ['rose', 'Gül = Katıl'],
     ['heart', `Beğeni = +${lp} Güç`],
-    ['gift', 'Hediye = Süper Güç']
+    ['gift', `1 Jeton = ${state ? fmt(state.settings.giftMultiplier) : 10} Güç`]
   ];
   const widths = items.map(i => measure(i[1], 30) + 78);
   const gap = 14, total = widths.reduce((a, b) => a + b, 0) + gap * 2;
@@ -756,6 +756,25 @@ function drawBoard(ranked) {
   if (extra > 0) text(`+${extra} daha`, B.x + B.w - 30, B.y + 46, 24, { align: 'right', color: '#adb5bd', weight: 700 });
 }
 
+function drawNextGame(now) {
+  if (!state || state.nextGameIn == null) return;
+  const left = Math.max(0, state.nextGameIn - (now - stateAt));
+  const s = Math.ceil(left / 1000), mm = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0');
+  const approx = state.phase === 'win' ? '' : '~';
+  const x = 810, y = 492, w = 300, h = 74;
+  ctx.save();
+  rr(x - w / 2, y - h / 2, w, h, 20);
+  ctx.fillStyle = 'rgba(15,10,35,.82)'; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = state.phase === 'win' ? 'rgba(140,233,154,.8)' : 'rgba(255,255,255,.28)'; ctx.stroke();
+  ctx.restore();
+  // saat ikonu
+  ctx.save(); ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 4; const ix = x - w / 2 + 34;
+  ctx.beginPath(); ctx.arc(ix, y, 15, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ix, y); ctx.lineTo(ix, y - 9); ctx.moveTo(ix, y); ctx.lineTo(ix + 7, y + 3); ctx.stroke(); ctx.restore();
+  text('SONRAKİ OYUN', x + 22, y - 16, 20, { color: '#adb5bd', weight: 800 });
+  text(`${approx}${mm}:${ss}`, x + 22, y + 15, 32, { color: '#ffffff', weight: 900 });
+}
+
 function drawToasts(now) {
   // sıradaki bildirimi göster (kuyruk uzunsa daha hızlı akar)
   if (!toasts.length) {
@@ -763,7 +782,7 @@ function drawToasts(now) {
       const msg = 'Hediye atmaya devam! Kurbağanı kurtar!';
       const w = measure(msg, 34) + 110, y = L.toast.y, p = 1 + Math.sin(now / 160) * .03;
       ctx.save(); ctx.translate(W / 2, y); ctx.scale(p, p);
-      rr(-w / 2, -36, w, 72, 36); ctx.fillStyle = 'rgba(150,20,35,.9)'; ctx.fill();
+      rr(-w / 2, -31, w, 62, 31); ctx.fillStyle = 'rgba(150,20,35,.9)'; ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = '#ffc9c9'; ctx.stroke();
       iconGift(-w / 2 + 44, 0, 34);
       text(msg, 22, 1, 34, { color: '#fff' });
@@ -781,7 +800,7 @@ function drawToasts(now) {
   const size = t.gold ? 36 : 32;
   const w = Math.min(1000, measure(t.msg, size) + 110);
   ctx.save(); ctx.globalAlpha = a;
-  rr(W / 2 - w / 2, y - 36, w, 72, 36);
+  rr(W / 2 - w / 2, y - 31, w, 62, 31);
   ctx.fillStyle = t.gold ? 'rgba(120,70,0,.9)' : 'rgba(15,10,35,.85)'; ctx.fill();
   ctx.lineWidth = 3; ctx.strokeStyle = t.gold ? '#ffd43b' : 'rgba(255,255,255,.3)'; ctx.stroke();
   const ix = W / 2 - w / 2 + 44;
@@ -1064,6 +1083,7 @@ function frame(now) {
   drawPrincess(L.princess.x, L.princess.y, t, { kiss: win.princessKiss, wave: !state || state.phase === 'lobby' });
   if (inWin && win.showPrince) drawPrince(L.prince.x, L.prince.y, t, clamp((win.el - (win.P3 - .4)) / .4, 0, 1));
 
+  if (!(state && state.curtain)) drawNextGame(now);
   drawToasts(now);
   drawBanner(now);
   drawParticles(dt);

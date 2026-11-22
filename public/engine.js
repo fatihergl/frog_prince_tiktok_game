@@ -171,7 +171,7 @@
       if (!p.alive || this.phase === 'win') return { ok: false, reason: 'not-active' };
       if (user.avatar) p.avatar = user.avatar;
       p.power += power;
-      this.emit({ type: 'power', id, name: p.name, add: power, power: p.power, gift: gift.giftName || 'Hediye', count, big: power >= 100 * this.settings.giftMultiplier / 10 });
+      this.emit({ type: 'power', id, name: p.name, add: power, power: p.power, gift: gift.giftName || 'Hediye', count, coins: diamonds * count });
       return { ok: true };
     }
 
@@ -277,11 +277,20 @@
         if (winner.hidden || !this.settings.showWinnerAvatar) winner.avatar = null;
         delete winner.hidden;
       }
-      let dangerId = null, elimLeft = null;
+      let dangerId = null, elimLeft = null, nextGameIn = null;
+      const winMs = this.settings.winSeconds * 1000;
       if (this.phase === 'fight') {
         const ranked = this._ranked();
         if (ranked.length > 1) dangerId = ranked[ranked.length - 1].id;
         elimLeft = Math.max(0, this.nextElimAt - now);
+        // Kalan elemeler + son bekleme + kazanan ekranı (yaklaşık)
+        nextGameIn = elimLeft + Math.max(0, ranked.length - 2) * this.elimInterval + (ranked.length > 1 ? 1300 : 0) + winMs;
+      } else if (this.phase === 'win') {
+        nextGameIn = Math.max(0, this.winEndsAt - now);
+      } else if (this.roundEndsAt) {
+        const n = this.aliveCount();
+        const interval = n > 1 ? Math.max(400, Math.min(6000, (this.settings.fightSeconds * 1000) / (n - 1))) : 0;
+        nextGameIn = Math.max(0, this.roundEndsAt - now) + 3000 + Math.max(0, n - 2) * interval + 1300 + winMs;
       }
       return {
         phase: this.phase,
@@ -289,6 +298,7 @@
         now,
         dangerId,
         elimLeft,
+        nextGameIn,
         elimInterval: this.elimInterval,
         maxPlayers: this.settings.maxPlayers,
         timeLeft: this.roundEndsAt ? Math.max(0, this.roundEndsAt - now) : null,
