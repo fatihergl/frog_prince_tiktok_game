@@ -1,0 +1,18 @@
+{
+  "port": 3000,
+  "host": "127.0.0.1",
+  "tiktokUsername": "",
+  "autoConnect": false,
+  "signApiKey": "",
+  "nameSource": "uniqueId",
+  "extraBadWords": [],
+  "game": {
+    "roundSeconds": 180,
+    "minPlayers": 2,
+    "likePower": 1,
+    "giftMultiplier": 10,
+    "fightSeconds": 10,
+    "winSeconds": 15,
+    "showWinnerAvatar": true
+  }
+}

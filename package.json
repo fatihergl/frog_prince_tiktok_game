@@ -1,0 +1,27 @@
+{
+  "name": "kurbaga-prens",
+  "version": "1.0.0",
+  "description": "TikTok LIVE etkileşimli oyunu: gül at, kurbağa ol, en güçlü kurbağa prensesi öpüp prens olsun.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "check": "node --check server.js && node --check public/engine.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tiktok-live-connector": "^2.0.3"
+  },
+  "keywords": [
+    "tiktok",
+    "tiktok-live",
+    "live-game",
+    "interactive",
+    "obs",
+    "overlay",
+    "game"
+  ]
+}

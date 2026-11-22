@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kurbağa Prens — Kontrol Paneli</title>
+<style>
+  :root {
+    --bg: #0f1020; --card: #181a30; --card2: #20233f; --line: #2c3056; --text: #e9ecf5; --muted: #8d92b5;
+    --gold: #ffcc33; --green: #3ccf7a; --red: #ff5c6c; --blue: #5aa9ff; --violet: #9b7bff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 "Segoe UI", system-ui, -apple-system, Arial, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--line); background: #13142a; position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
+  header h1 span { color: var(--gold); }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); font-weight: 600; font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.on { background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .dot.wait { background: var(--gold); animation: blink 1s infinite; }
+  .dot.err { background: var(--red); }
+  @keyframes blink { 50% { opacity: .3; } }
+  .spacer { flex: 1; }
+  main { display: grid; grid-template-columns: 380px 1fr 360px; gap: 16px; padding: 16px 22px 40px; max-width: 1600px; margin: 0 auto; }
+  @media (max-width: 1250px) { main { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  input[type=text], input[type=number] { background: #0d0e1c; border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 9px 11px; font-size: 15px; width: 100%; outline: none; }
+  input:focus { border-color: var(--violet); }
+  label.f { display: grid; grid-template-columns: 1fr 96px; align-items: center; gap: 8px; margin-bottom: 8px; color: #c7cbe6; }
+  button { border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 700; font-size: 14px; cursor: pointer; color: #fff; background: #343a66; transition: transform .05s, filter .15s; white-space: nowrap; }
+  button:hover { filter: brightness(1.15); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .4; cursor: not-allowed; filter: none; }
+  .b-green { background: #1f9d57; } .b-red { background: #d63c4c; } .b-gold { background: #d99a00; color: #1a1300; } .b-violet { background: #6c4ee0; } .b-ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .b-sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--card2); border-radius: 12px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 22px; } .stat small { color: var(--muted); }
+  .big { font-size: 34px; font-weight: 800; letter-spacing: .5px; }
+  .phase { font-weight: 800; padding: 4px 10px; border-radius: 8px; font-size: 13px; }
+  .ph-lobby { background: #1d3b2b; color: #7ff0ae; } .ph-fight { background: #4a1d27; color: #ff9aa6; } .ph-win { background: #4a3a10; color: var(--gold); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 8px; border-bottom: 1px solid #23264a; vertical-align: middle; }
+  tr.dead td { opacity: .45; }
+  .tablewrap { max-height: 520px; overflow: auto; }
+  .uid { color: var(--muted); font-size: 12px; }
+  .tag { font-size: 11px; padding: 2px 6px; border-radius: 6px; background: #2b2f55; color: #b9bde0; margin-left: 6px; }
+  .log { height: 300px; overflow: auto; font: 12.5px/1.5 Consolas, "SF Mono", monospace; background: #0b0c18; border-radius: 10px; padding: 8px 10px; border: 1px solid var(--line); }
+  .log div { white-space: pre-wrap; } .log .warn { color: #ffb4bd; } .log .ok { color: #8ff0b8; } .log .win { color: var(--gold); } .log .gift { color: #c9b8ff; } .log t { color: #5d628c; }
+  .note { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .warnbox { background: #3a1820; border: 1px solid #6b2532; color: #ffc2ca; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 10px; display: none; }
+  .okbox { background: #15301f; border: 1px solid #23573a; color: #b7f5cf; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; }
+  .switch input { width: 44px; height: 24px; appearance: none; background: #33375e; border-radius: 999px; position: relative; cursor: pointer; transition: .2s; flex: none; }
+  .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: .2s; }
+  .switch input:checked { background: var(--green); } .switch input:checked::after { left: 23px; }
+  .copy { display: flex; gap: 6px; } .copy input { font-family: Consolas, monospace; font-size: 13px; }
+  iframe { width: 100%; aspect-ratio: 9/16; border: 1px solid var(--line); border-radius: 14px; background: #000; }
+  .toast { position: fixed; right: 20px; bottom: 20px; background: #2b2f55; border: 1px solid var(--line); padding: 12px 16px; border-radius: 12px; opacity: 0; transform: translateY(10px); transition: .25s; pointer-events: none; max-width: 380px; }
+  .toast.show { opacity: 1; transform: none; }
+  .test-locked { position: relative; }
+  .test-locked .lockmsg { display: none; }
+  .test-locked.locked .lockmsg { display: block; }
+  .test-locked.locked .testbtns { opacity: .35; pointer-events: none; }
+  kbd { background: #2b2f55; border-radius: 5px; padding: 1px 6px; font-size: 12px; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐸 Kurbağa <span>Prens</span> · Kontrol Paneli</h1>
+  <span class="pill"><span class="dot" id="liveDot"></span><span id="liveText">Bağlı değil</span></span>
+  <span class="pill"><span class="dot" id="srvDot"></span><span id="srvText">Sunucu</span></span>
+  <div class="spacer"></div>
+  <button class="b-red" id="curtainBtn" title="Ekranı hemen 'Mola' perdesiyle kapatır">🛑 Mola Ekranı</button>
+</header>
+
+<main>
+  <!-- SOL SÜTUN -->
+  <section>
+    <div class="card">
+      <h2>📡 TikTok LIVE Bağlantısı</h2>
+      <div class="warnbox" id="libWarn">Bağlantı kütüphanesi kurulu değil. Proje klasöründe <b>npm install</b> komutunu çalıştırıp programı yeniden başlat.</div>
+      <div class="warnbox" id="errBox"></div>
+      <div class="row">
+        <input type="text" id="username" placeholder="TikTok kullanıcı adın (ör. kurbagaprens)" autocomplete="off">
+      </div>
+      <div class="row">
+        <button class="b-green" id="connectBtn" style="flex:1">Bağlan</button>
+        <button class="b-ghost" id="disconnectBtn">Bağlantıyı kes</button>
+      </div>
+      <p class="note">Önce TikTok'ta yayını aç, sonra bağlan. Bağlantı koparsa program kendi kendine tekrar dener.</p>
+    </div>
+
+    <div class="card">
+      <h2>⏱ Tur Kontrolü</h2>
+      <div class="row" style="justify-content:space-between">
+        <span class="phase ph-lobby" id="phaseTag">BEKLEME</span>
+        <span class="uid" id="roundNo">Tur 1</span>
+      </div>
+      <div class="big" id="timer">--:--</div>
+      <p class="note" id="timerNote">Oyuncu bekleniyor</p>
+      <div class="grid2" style="margin-top:10px">
+        <button class="b-violet" id="fightBtn">⚔ Savaşı şimdi başlat</button>
+        <button class="b-ghost" id="addTimeBtn">+30 saniye</button>
+        <button class="b-ghost" id="resetBtn" style="grid-column:span 2">↺ Turu sıfırla (herkes çıkar)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚙ Oyun Ayarları</h2>
+      <label class="f">Tur süresi (saniye) <input type="number" id="s_roundSeconds" min="10"></label>
+      <label class="f">Savaş için en az oyuncu <input type="number" id="s_minPlayers" min="1"></label>
+      <label class="f">1 beğeni = kaç güç <input type="number" id="s_likePower" min="0"></label>
+      <label class="f">Hediye çarpanı (elmas × ?) <input type="number" id="s_giftMultiplier" min="1"></label>
+      <label class="f">Savaş süresi (saniye) <input type="number" id="s_fightSeconds" min="3"></label>
+      <label class="f">Kazanan ekranı (saniye) <input type="number" id="s_winSeconds" min="6"></label>
+      <div class="switch"><span>Finalde kazananın profil fotoğrafını göster<br><small class="uid">Oyun boyunca hiç kimsenin fotoğrafı görünmez.</small></span><input type="checkbox" id="s_showWinnerAvatar"></div>
+      <button class="b-gold" id="saveSettings" style="width:100%;margin-top:6px">Ayarları kaydet</button>
+    </div>
+  </section>
+
+  <!-- ORTA SÜTUN -->
+  <section>
+    <div class="card">
+      <h2>📊 Bu yayın</h2>
+      <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><b id="stPlayers">0</b><small>Kurbağa</small></div>
+        <div class="stat"><b id="stJoins">0</b><small>Katılım (gül)</small></div>
+        <div class="stat"><b id="stLikes">0</b><small>Beğeni</small></div>
+        <div class="stat"><b id="stDiamonds">0</b><small>Elmas (tahmini)</small></div>
+      </div>
+    </div>
+
+    <div class="card" id="winnerCard" style="display:none">
+      <h2>👑 Kazanan</h2>
+      <div class="row" style="justify-content:space-between">
+        <div><b id="winName" style="font-size:20px"></b> <span class="uid" id="winPower"></span></div>
+        <button class="b-red b-sm" id="hideAvatarBtn">Fotoğrafını gizle</button>
+      </div>
+      <p class="note">Kazananın fotoğrafı uygunsuzsa bu tuşla anında gizle. Fotoğrafın yerine kurbağa gösterilir.</p>
+    </div>
+
+    <div class="card">
+      <h2>🐸 Oyuncular <span class="uid" id="plCount"></span></h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>Ekrandaki ad</th><th>Güç</th><th style="text-align:right">İşlem</th></tr></thead>
+          <tbody id="plBody"><tr><td colspan="4" class="uid">Henüz kimse yok. İlk gül gelince burada görünecek.</td></tr></tbody>
+        </table>
+      </div>
+      <p class="note"><b>Çıkar:</b> bu turdan atar. <b>Engelle:</b> kara listeye ekler, bir daha hiç katılamaz. Uygunsuz isimler zaten otomatik olarak “Kurbağa #N” şeklinde gösterilir.</p>
+    </div>
+
+    <div class="card">
+      <h2>📜 Olay Günlüğü</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <!-- SAĞ SÜTUN -->
+  <section>
+    <div class="card">
+      <h2>🖥 Oyun Ekranı (OBS / LIVE Studio)</h2>
+      <div class="copy"><input type="text" id="overlayUrl" readonly><button class="b-sm" id="copyBtn">Kopyala</button></div>
+      <p class="note">OBS veya TikTok LIVE Studio'da <b>Tarayıcı Kaynağı</b> ekle, bu adresi yapıştır, boyutu <b>1080 × 1920</b> yap.</p>
+      <div style="margin-top:10px"><iframe id="preview" title="Önizleme"></iframe></div>
+    </div>
+
+    <div class="card test-locked" id="testCard">
+      <h2>🧪 Test Araçları</h2>
+      <div class="okbox lockmsg">Canlı yayına bağlıyken test araçları <b>otomatik olarak kapalıdır</b>. Böylece sahte hediye yanlışlıkla yayına çıkmaz.</div>
+      <div class="testbtns">
+        <div class="grid2">
+          <button id="tJoin1">🌹 1 test oyuncusu</button>
+          <button id="tJoin10">🌹 10 test oyuncusu</button>
+          <button id="tLikes">❤ Beğeni yağdır</button>
+          <button id="tGiftS">🎁 Küçük hediye</button>
+          <button id="tGiftM">🎁 Orta hediye</button>
+          <button id="tGiftB" class="b-gold">🦁 Dev hediye</button>
+        </div>
+        <p class="note">Test oyuncuları canlı yayına bağlandığın anda otomatik silinir.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⛔ Kara Liste</h2>
+      <div id="blList" class="uid">Boş</div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('tr-TR');
+let S = null, stateAt = 0, settingsLoaded = false;
+
+function toast(msg, bad) {
+  const t = $('toast'); t.textContent = msg; t.style.borderColor = bad ? '#d63c4c' : '#2c3056';
+  t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+async function post(url, body) {
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) { toast(j.error || 'İşlem yapılamadı', true); return null; }
+    return j;
+  } catch { toast('Sunucuya ulaşılamadı', true); return null; }
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* ---- Bağlantı ---- */
+$('connectBtn').onclick = () => {
+  const u = $('username').value.trim();
+  if (!u) return toast('Önce kullanıcı adını yaz', true);
+  try { localStorage.setItem('kp_user', u); } catch { }
+  post('/api/connect', { username: u }).then(r => r && toast('Bağlanılıyor…'));
+};
+$('disconnectBtn').onclick = () => post('/api/disconnect');
+try { $('username').value = localStorage.getItem('kp_user') || ''; } catch { }
+
+/* ---- Tur ---- */
+$('fightBtn').onclick = () => post('/api/round/fight').then(r => r && toast('Savaş başladı!'));
+$('addTimeBtn').onclick = () => post('/api/round/add-time', { seconds: 30 });
+$('resetBtn').onclick = () => { if (confirm('Tur sıfırlansın mı? Bu turdaki tüm kurbağalar çıkarılır.')) post('/api/round/reset'); };
+$('curtainBtn').onclick = () => post('/api/curtain', { on: !(S && S.curtain) });
+$('hideAvatarBtn').onclick = () => post('/api/winner/hide-avatar', { hidden: true }).then(r => r && toast('Fotoğraf gizlendi'));
+
+/* ---- Ayarlar ---- */
+const SKEYS = ['roundSeconds', 'minPlayers', 'likePower', 'giftMultiplier', 'fightSeconds', 'winSeconds'];
+function fillSettings(st) {
+  for (const k of SKEYS) $('s_' + k).value = st[k];
+  $('s_showWinnerAvatar').checked = !!st.showWinnerAvatar;
+}
+$('saveSettings').onclick = () => {
+  const b = {};
+  for (const k of SKEYS) b[k] = Number($('s_' + k).value);
+  b.showWinnerAvatar = $('s_showWinnerAvatar').checked;
+  post('/api/settings', b).then(r => r && toast('Ayarlar kaydedildi'));
+};
+
+/* ---- Test ---- */
+$('tJoin1').onclick = () => post('/api/test/join', { count: 1 });
+$('tJoin10').onclick = () => post('/api/test/join', { count: 10 });
+$('tLikes').onclick = () => post('/api/test/likes');
+$('tGiftS').onclick = () => post('/api/test/gift', { size: 'small' });
+$('tGiftM').onclick = () => post('/api/test/gift', { size: 'medium' });
+$('tGiftB').onclick = () => post('/api/test/gift', { size: 'huge' });
+
+/* ---- Oyuncu işlemleri ---- */
+$('plBody').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const id = b.dataset.id, uid = b.dataset.uid;
+  if (b.dataset.act === 'kick') post('/api/player/kick', { id });
+  if (b.dataset.act === 'ban' && confirm(`"${uid}" kara listeye eklensin mi? Bir daha oyuna katılamaz.`)) post('/api/player/ban', { id, uniqueId: uid }).then(loadBlacklist);
+});
+async function loadBlacklist() {
+  try {
+    const list = await (await fetch('/api/blacklist')).json();
+    $('blList').innerHTML = list.length ? list.map(x => `<div class="row" style="justify-content:space-between;margin:0 0 6px"><span>${esc(x)}</span><button class="b-ghost b-sm" data-unban="${esc(x)}">Kaldır</button></div>`).join('') : 'Boş';
+  } catch { }
+}
+$('blList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-unban]'); if (!b) return;
+  post('/api/player/unban', { id: b.dataset.unban }).then(loadBlacklist);
+});
+
+/* ---- Çizim ---- */
+const PH = { lobby: ['BEKLEME', 'ph-lobby'], fight: ['SAVAŞ', 'ph-fight'], win: ['KAZANAN', 'ph-win'] };
+let lastTableKey = '';
+function render() {
+  if (!S) return;
+  const L = S.live;
+  const dot = $('liveDot');
+  dot.className = 'dot ' + (L.connected ? 'on' : L.connecting ? 'wait' : (L.lastError ? 'err' : ''));
+  $('liveText').textContent = L.connected ? `Canlı: @${L.username}` : L.connecting ? 'Bağlanıyor…' : (L.wanted ? 'Tekrar denenecek…' : 'Bağlı değil');
+  $('libWarn').style.display = L.libMissing ? 'block' : 'none';
+  $('errBox').style.display = !L.connected && L.lastError ? 'block' : 'none';
+  $('errBox').textContent = L.lastError || '';
+  $('connectBtn').disabled = L.connected || L.connecting;
+  $('testCard').classList.toggle('locked', !!L.connected);
+  $('curtainBtn').textContent = S.curtain ? '▶ Molayı bitir' : '🛑 Mola Ekranı';
+  $('curtainBtn').className = S.curtain ? 'b-green' : 'b-red';
+
+  const [ph, cls] = PH[S.phase] || PH.lobby;
+  $('phaseTag').textContent = ph; $('phaseTag').className = 'phase ' + cls;
+  $('roundNo').textContent = 'Tur ' + S.round;
+  const alive = S.players.filter(p => p.alive);
+  if (S.phase === 'lobby' && S.timeLeft != null) {
+    const left = Math.max(0, S.timeLeft - (performance.now() - stateAt));
+    const s = Math.ceil(left / 1000);
+    $('timer').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    $('timerNote').textContent = `${alive.length} kurbağa yarışıyor`;
+  } else if (S.phase === 'lobby') {
+    $('timer').textContent = '--:--';
+    $('timerNote').textContent = `Oyuncu bekleniyor (${alive.length}/${S.minPlayers}). Süre, yeterli oyuncu gelince başlar.`;
+  } else if (S.phase === 'fight') {
+    $('timer').textContent = '⚔';
+    $('timerNote').textContent = `${alive.length} kurbağa kaldı`;
+  } else {
+    $('timer').textContent = '👑';
+    $('timerNote').textContent = 'Kazanan ekranı gösteriliyor, sonra yeni tur başlar.' + (S.queued ? ` Sırada bekleyen: ${S.queued}` : '');
+  }
+  $('fightBtn').disabled = S.phase !== 'lobby' || alive.length < 1;
+  $('addTimeBtn').disabled = !(S.phase === 'lobby' && S.timeLeft != null);
+
+  $('stPlayers').textContent = fmt(S.players.length);
+  $('stJoins').textContent = fmt(L.stats.joins);
+  $('stLikes').textContent = fmt(L.stats.likes);
+  $('stDiamonds').textContent = fmt(L.stats.diamonds);
+
+  $('winnerCard').style.display = S.phase === 'win' && S.winner ? 'block' : 'none';
+  if (S.winner) {
+    $('winName').textContent = S.winner.name;
+    $('winPower').textContent = fmt(S.winner.power) + ' güç';
+    $('hideAvatarBtn').disabled = !S.winner.avatar;
+    $('hideAvatarBtn').textContent = S.winner.avatar ? 'Fotoğrafını gizle' : 'Fotoğraf gösterilmiyor';
+  }
+
+  const sorted = S.players.slice().sort((a, b) => (b.alive - a.alive) || (b.power - a.power));
+  $('plCount').textContent = `(${alive.length} aktif)`;
+  const key = JSON.stringify(sorted.map(p => [p.id, p.power, p.alive, p.name]));
+  if (key !== lastTableKey) {
+    lastTableKey = key;
+    $('plBody').innerHTML = sorted.length ? sorted.map((p, i) => `
+      <tr class="${p.alive ? '' : 'dead'}">
+        <td>${i + 1}</td>
+        <td><b>${esc(p.name)}</b>${p.isTest ? '<span class="tag">test</span>' : ''}<br><span class="uid">@${esc(p.uniqueId || '')}</span></td>
+        <td>${fmt(p.power)}</td>
+        <td style="text-align:right"><button class="b-ghost b-sm" data-act="kick" data-id="${esc(p.id)}">Çıkar</button>
+            <button class="b-red b-sm" data-act="ban" data-id="${esc(p.id)}" data-uid="${esc(p.uniqueId || p.name)}">Engelle</button></td>
+      </tr>`).join('') : '<tr><td colspan="4" class="uid">Henüz kimse yok. İlk gül gelince burada görünecek.</td></tr>';
+  }
+  if (!settingsLoaded && S.settings) { fillSettings(S.settings); settingsLoaded = true; }
+}
+setInterval(render, 250);
+
+function addLog(l) {
+  const box = $('log');
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+  const d = document.createElement('div'); d.className = l.level;
+  d.innerHTML = `<t>${new Date(l.t).toLocaleTimeString('tr-TR')}</t> ${esc(l.msg)}`;
+  box.appendChild(d);
+  while (box.children.length > 300) box.firstChild.remove();
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+/* ---- Sunucu bağlantısı ---- */
+const ovUrl = location.origin + '/overlay';
+$('overlayUrl').value = ovUrl;
+$('preview').src = '/overlay?sound=0';
+$('copyBtn').onclick = () => { navigator.clipboard.writeText(ovUrl).then(() => toast('Adres kopyalandı')); };
+
+fetch('/api/logs').then(r => r.json()).then(ls => ls.forEach(addLog)).catch(() => { });
+loadBlacklist();
+const es = new EventSource('/events?kind=panel');
+es.addEventListener('state', e => { S = JSON.parse(e.data); stateAt = performance.now(); $('srvDot').className = 'dot on'; $('srvText').textContent = 'Sunucu'; });
+es.addEventListener('log', e => addLog(JSON.parse(e.data)));
+es.onerror = () => { $('srvDot').className = 'dot err'; $('srvText').textContent = 'Sunucu kapalı'; };
+
+/* ---- Kısayollar ---- */
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'm' || e.key === 'M') $('curtainBtn').click();
+  if (e.key === 'h' || e.key === 'H') $('hideAvatarBtn').click();
+});
+</script>
+</body>
+</html>
